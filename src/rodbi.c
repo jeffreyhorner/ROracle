@@ -871,6 +871,21 @@ do                                                                            \
 
 
 
+/* --------------------- rodbimkChar ------------------------------------ */
+/* Returns NA_STRING if nul is first character. */
+/* Otherwise returns name up until first NULL */
+static inline SEXP rodbimkChar(const char *name, int len, cetype_t enc){
+    int nulcount = 0;
+    for (int slen = 0; slen < len; slen++) {
+      if (!name[slen]){
+        if (slen==0) return NA_STRING;
+        return Rf_mkCharLenCE(name, slen+1,enc);
+      }
+    }
+    return Rf_mkCharLenCE(name, len,enc);
+}
+
+
 /* --------------------- rodbichkIntFn ------------------------------------ */
 /* Check for cntl-C interrupt */
 void rodbichkIntFn(void *dummy)
@@ -2637,7 +2652,7 @@ static void rodbiResAccum(rodbiRes *res)
 
         case SQLT_STR:
           SET_STRING_ELT(vec, lcur,
-                         Rf_mkCharLenCE((char *)dat,
+                         rodbimkChar((char *)dat,
                          (res->res_rodbiRes).len_roociRes[cid][fcur], enc));
           break;
 
@@ -2663,7 +2678,7 @@ static void rodbiResAccum(rodbiRes *res)
                                              fcur, cid));
 
               /* make character element */
-            SET_STRING_ELT(vec, lcur, mkCharLenCE((const char *)
+            SET_STRING_ELT(vec, lcur, rodbimkChar((const char *)
                          ((res->res_rodbiRes).lobbuf_roociRes), lob_len, enc));
           }
           break;
@@ -2934,11 +2949,11 @@ static void rodbiResPopulate(rodbiRes *res)
             {
               len = RODBI_GET_VAR_DATA_ITEM(hdl,(void *)conv_buf,conv_buf_len);
               SET_STRING_ELT(vec, lcur,
-                             Rf_mkCharLenCE((char *)conv_buf, len, enc));
+                             rodbimkChar((char *)conv_buf, len, enc));
             }
             else
             {
-              SET_STRING_ELT(vec,lcur,Rf_mkCharLenCE((char *)data, len, enc));
+              SET_STRING_ELT(vec,lcur,rodbimkChar((char *)data, len, enc));
             }
           }
           break;
